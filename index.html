@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrintMaster - Sistema de Impressão</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Simplificado */
+        .simple-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            color: white;
+        }
+
+        .logo h1 {
+            color: white;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .tagline {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1100px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .config-section, .preview-section {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        h2 {
+            color: var(--text);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h2 i {
+            color: var(--primary);
+        }
+
+        .section-group {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: var(--text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .section-title i {
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        .file-input {
+            margin-bottom: 20px;
+        }
+
+        .file-input label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .file-input-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            background: var(--background);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .file-input-area:hover {
+            border-color: var(--primary);
+            background: #f0f7ff;
+        }
+
+        .file-input-area i {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .file-input-area p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .file-name {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: var(--background);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-group input {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+
+        .control-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .preview-area {
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            background: var(--background);
+            min-height: 500px;
+            position: relative;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page-preview {
+            width: 200mm;
+            height: 280mm;
+            background: white;
+            margin: 0 auto 20px auto;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .multi-copy-container {
+            display: grid;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .copy-slot {
+            background: white;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copy-number {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: var(--primary);
+            color: white;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            z-index: 10;
+        }
+
+        .preview-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .preview-content img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .actions {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #0da271;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+            transform: translateY(-1px);
+        }
+
+        .status-message {
+            padding: 12px;
+            margin: 16px 0;
+            border-radius: 8px;
+            display: none;
+            animation: slideIn 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .preview-label {
+            text-align: center;
+            margin-top: 8px;
+            font-weight: 600;
+            color: var(--text);
+            background: var(--surface);
+            padding: 6px 12px;
+            border-radius: 16px;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+
+        .total-copies {
+            background: #e0f2fe;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 16px 0;
+            font-weight: 600;
+            color: var(--primary-dark);
+            text-align: center;
+            border-left: 4px solid var(--primary);
+            font-size: 0.9rem;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: var(--background);
+            border-radius: 8px;
+        }
+
+        .toggle-group label {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--secondary);
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .github-section {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 12px;
+            margin-top: 24px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .github-section h2 {
+            justify-content: center;
+            border: none;
+            margin-bottom: 16px;
+        }
+
+        .github-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .github-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: #24292e;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .github-btn:hover {
+            background: #2d3339;
+            transform: translateY(-1px);
+        }
+
+        .extension-info {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .extension-info h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .extension-info p {
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+
+        /* Quick Features */
+        .quick-features {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .feature-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Simplificado -->
+        <div class="simple-header">
+            <div class="logo">
+                <i class="fas fa-print logo-icon"></i>
+                <h1>PrintMaster</h1>
+            </div>
+            <p class="tagline">Sistema profissional de impressão e layout</p>
+            <div class="quick-features">
+                <span class="feature-badge">Frente e Verso</span>
+                <span class="feature-badge">Múltiplas Cópias</span>
+                <span class="feature-badge">PDF Automático</span>
+                <span class="feature-badge">Centralização</span>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <section class="config-section">
+                <h2><i class="fas fa-sliders-h"></i> Configurações</h2>
+                
+                <div class="section-group">
+                    <h3 class="section-title"><i class="fas fa-file-upload"></i> Documentos</h3>
+                    
+                    <div class="file-input">
+                        <label>Documento da Frente</label>
+                        <div class="file-input-area" id="front-file-area">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Clique para selecionar arquivo</p>
+                            <input type="file" id="front-file" accept=".jpg,.jpeg,.png,.pdf" style="display: none;">
+                        </div>
+                        <div class="file-name" id="front-file-name">Nenhum arquivo selecionado</div>
+                    </div>
+                    
+                    <div class="file-input">
+                        <label>Documento do Verso</label>
+                        <div class="file-input-area" id="back-file-area">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Clique para selecionar arquivo</p>
+                            <input type="file" id="back-file" accept=".jpg,.jpeg,.png,.pdf" style="display: none;">
+                        </div>
+                        <div class="file-name" id="back-file-name">Nenhum arquivo selecionado</div>
+                    </div>
+                </div>
+                
+                <div class="section-group">
+                    <h3 class="section-title"><i class="fas fa-ruler"></i> Dimensões</h3>
+                    
+                    <div class="controls-grid">
+                        <div class="control-group">
+                            <label><i class="fas fa-arrows-alt-h"></i> Largura (cm)</label>
+                            <input type="number" id="doc-width" min="1" max="21" value="8" step="0.1">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label><i class="fas fa-arrows-alt-v"></i> Altura (cm)</label>
+                            <input type="number" id="doc-height" min="1" max="29.7" value="10" step="0.1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section-group">
+                    <h3 class="section-title"><i class="fas fa-th"></i> Layout</h3>
+                    
+                    <div class="controls-grid">
+                        <div class="control-group">
+                            <label><i class="fas fa-arrows-alt-h"></i> Na Horizontal</label>
+                            <input type="number" id="horizontal-copies" min="1" max="10" value="2">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label><i class="fas fa-arrows-alt-v"></i> Na Vertical</label>
+                            <input type="number" id="vertical-copies" min="1" max="10" value="2">
+                        </div>
+                    </div>
+                    
+                    <div class="controls-grid">
+                        <div class="control-group">
+                            <label><i class="fas fa-arrows-alt-h"></i> Espaço Horizontal (mm)</label>
+                            <input type="number" id="horizontal-spacing" min="0" max="50" value="5" step="0.5">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label><i class="fas fa-arrows-alt-v"></i> Espaço Vertical (mm)</label>
+                            <input type="number" id="vertical-spacing" min="0" max="50" value="5" step="0.5">
+                        </div>
+                    </div>
+                    
+                    <div class="toggle-group">
+                        <label for="auto-center">Centralização Automática</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="auto-center" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="total-copies" id="total-copies-info">
+                        Total: 4 cópias por folha (2x2)
+                    </div>
+                </div>
+                
+                <div class="status-message" id="status-message"></div>
+                
+                <div class="actions">
+                    <button class="btn-secondary" id="reset-btn">
+                        <i class="fas fa-redo"></i> Limpar
+                    </button>
+                    <button class="btn-success" id="test-pdf-btn">
+                        <i class="fas fa-file-pdf"></i> Gerar PDF
+                    </button>
+                    <button class="btn-primary" id="print-btn">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                </div>
+            </section>
+            
+            <section class="preview-section">
+                <h2><i class="fas fa-eye"></i> Pré-visualização</h2>
+                
+                <div class="preview-area">
+                    <div class="page-preview">
+                        <div class="multi-copy-container" id="front-preview">
+                            <!-- As cópias serão geradas aqui pelo JavaScript -->
+                        </div>
+                    </div>
+                    <div class="preview-label">FRENTE</div>
+                    
+                    <div class="page-preview" style="margin-top: 30px;">
+                        <div class="multi-copy-container" id="back-preview">
+                            <!-- As cópias serão geradas aqui pelo JavaScript -->
+                        </div>
+                    </div>
+                    <div class="preview-label">VERSO</div>
+                </div>
+            </section>
+        </div>
+
+        <section class="github-section">
+            <h2><i class="fab fa-github"></i> Open Source</h2>
+            <p style="color: var(--text-light); font-size: 0.9rem;">Contribua com o projeto no GitHub</p>
+            
+            <div class="github-buttons">
+                <a href="https://github.com" class="github-btn" target="_blank">
+                    <i class="fab fa-github"></i> Ver Código
+                </a>
+                <a href="https://github.com" class="github-btn" target="_blank">
+                    <i class="fas fa-code-branch"></i> Fazer Fork
+                </a>
+                <a href="https://github.com" class="github-btn" target="_blank">
+                    <i class="fas fa-bug"></i> Reportar Bug
+                </a>
+            </div>
+
+            <div class="extension-info">
+                <h3><i class="fab fa-chrome"></i> Extensão Chrome</h3>
+                <p>Instale nossa extensão para acesso rápido</p>
+                <button class="btn-primary" style="margin-top: 10px; background: white; color: #ee5a24; border: none; padding: 8px 16px; font-size: 0.8rem;">
+                    <i class="fab fa-chrome"></i> Instalar
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Constantes
+            const PAGE_WIDTH = 210;
+            const PAGE_HEIGHT = 297;
+            const MARGIN = 5;
+            
+            // Elementos
+            const frontFileInput = document.getElementById('front-file');
+            const backFileInput = document.getElementById('back-file');
+            const frontFileArea = document.getElementById('front-file-area');
+            const backFileArea = document.getElementById('back-file-area');
+            const frontFileName = document.getElementById('front-file-name');
+            const backFileName = document.getElementById('back-file-name');
+            const docWidthInput = document.getElementById('doc-width');
+            const docHeightInput = document.getElementById('doc-height');
+            const horizontalCopiesInput = document.getElementById('horizontal-copies');
+            const verticalCopiesInput = document.getElementById('vertical-copies');
+            const horizontalSpacingInput = document.getElementById('horizontal-spacing');
+            const verticalSpacingInput = document.getElementById('vertical-spacing');
+            const autoCenterToggle = document.getElementById('auto-center');
+            const totalCopiesInfo = document.getElementById('total-copies-info');
+            const frontPreview = document.getElementById('front-preview');
+            const backPreview = document.getElementById('back-preview');
+            const statusMessage = document.getElementById('status-message');
+            const resetBtn = document.getElementById('reset-btn');
+            const testPdfBtn = document.getElementById('test-pdf-btn');
+            const printBtn = document.getElementById('print-btn');
+            
+            // Estado
+            let frontImageData = null;
+            let backImageData = null;
+            
+            // Event Listeners
+            frontFileArea.addEventListener('click', () => frontFileInput.click());
+            backFileArea.addEventListener('click', () => backFileInput.click());
+            
+            frontFileInput.addEventListener('change', (e) => handleFileUpload('front', e));
+            backFileInput.addEventListener('change', (e) => handleFileUpload('back', e));
+            
+            docWidthInput.addEventListener('input', updatePreview);
+            docHeightInput.addEventListener('input', updatePreview);
+            horizontalCopiesInput.addEventListener('input', updatePreview);
+            verticalCopiesInput.addEventListener('input', updatePreview);
+            horizontalSpacingInput.addEventListener('input', updatePreview);
+            verticalSpacingInput.addEventListener('input', updatePreview);
+            autoCenterToggle.addEventListener('change', updatePreview);
+            resetBtn.addEventListener('click', resetSystem);
+            testPdfBtn.addEventListener('click', generateTestPDF);
+            printBtn.addEventListener('click', printDocument);
+            
+            // Funções
+            function handleFileUpload(side, event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const fileNameElement = side === 'front' ? frontFileName : backFileName;
+                fileNameElement.textContent = file.name;
+                
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (side === 'front') {
+                            frontImageData = e.target.result;
+                        } else {
+                            backImageData = e.target.result;
+                        }
+                        updatePreview();
+                        showStatus('Documento carregado com sucesso!', 'success');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    showStatus('Apenas imagens são suportadas', 'error');
+                }
+            }
+            
+            function calculateLayout() {
+                const docWidth = parseFloat(docWidthInput.value) || 8;
+                const docHeight = parseFloat(docHeightInput.value) || 10;
+                const horizontalCopies = parseInt(horizontalCopiesInput.value) || 2;
+                const verticalCopies = parseInt(verticalCopiesInput.value) || 2;
+                const horizontalSpacing = parseFloat(horizontalSpacingInput.value) || 5;
+                const verticalSpacing = parseFloat(verticalSpacingInput.value) || 5;
+                const autoCenter = autoCenterToggle.checked;
+                
+                const docWidthMm = docWidth * 10;
+                const docHeightMm = docHeight * 10;
+                const totalCopies = horizontalCopies * verticalCopies;
+                
+                const totalWidth = (horizontalCopies * docWidthMm) + ((horizontalCopies - 1) * horizontalSpacing);
+                const totalHeight = (verticalCopies * docHeightMm) + ((verticalCopies - 1) * verticalSpacing);
+                
+                let extraMarginX = 0;
+                let extraMarginY = 0;
+                
+                if (autoCenter) {
+                    extraMarginX = (PAGE_WIDTH - (2 * MARGIN) - totalWidth) / 2;
+                    extraMarginY = (PAGE_HEIGHT - (2 * MARGIN) - totalHeight) / 2;
+                }
+                
+                totalCopiesInfo.textContent = `Total: ${totalCopies} cópias por folha (${horizontalCopies}x${verticalCopies})`;
+                
+                return {
+                    docWidth: docWidthMm,
+                    docHeight: docHeightMm,
+                    horizontalCopies,
+                    verticalCopies,
+                    horizontalSpacing,
+                    verticalSpacing,
+                    autoCenter,
+                    totalCopies,
+                    extraMarginX: Math.max(0, extraMarginX),
+                    extraMarginY: Math.max(0, extraMarginY)
+                };
+            }
+            
+            function updatePreview() {
+                const layout = calculateLayout();
+                updatePreviewContainer(frontPreview, layout, frontImageData, 'Frente');
+                updatePreviewContainer(backPreview, layout, backImageData, 'Verso');
+            }
+            
+            function updatePreviewContainer(container, layout, imageData, side) {
+                container.innerHTML = '';
+                
+                container.style.gridTemplateColumns = `repeat(${layout.horizontalCopies}, ${layout.docWidth}mm)`;
+                container.style.gridTemplateRows = `repeat(${layout.verticalCopies}, ${layout.docHeight}mm)`;
+                container.style.gap = `${layout.verticalSpacing}mm ${layout.horizontalSpacing}mm`;
+                
+                if (layout.autoCenter) {
+                    container.style.marginLeft = `${layout.extraMarginX}mm`;
+                    container.style.marginTop = `${layout.extraMarginY}mm`;
+                } else {
+                    container.style.marginLeft = `${MARGIN}mm`;
+                    container.style.marginTop = `${MARGIN}mm`;
+                }
+                
+                let copyIndex = 0;
+                
+                for (let row = 0; row < layout.verticalCopies; row++) {
+                    for (let col = 0; col < layout.horizontalCopies; col++) {
+                        copyIndex++;
+                        
+                        const copySlot = document.createElement('div');
+                        copySlot.className = 'copy-slot';
+                        copySlot.style.width = `${layout.docWidth}mm`;
+                        copySlot.style.height = `${layout.docHeight}mm`;
+                        
+                        const copyNumber = document.createElement('div');
+                        copyNumber.className = 'copy-number';
+                        copyNumber.textContent = copyIndex;
+                        copySlot.appendChild(copyNumber);
+                        
+                        const previewContent = document.createElement('div');
+                        previewContent.className = 'preview-content';
+                        
+                        if (imageData) {
+                            const img = document.createElement('img');
+                            img.src = imageData;
+                            img.alt = `Cópia ${copyIndex}`;
+                            img.style.objectFit = 'contain';
+                            img.style.objectPosition = 'center';
+                            img.style.width = '100%';
+                            img.style.height = '100%';
+                            previewContent.appendChild(img);
+                        } else {
+                            const text = document.createElement('div');
+                            text.innerHTML = `<p style="color: #64748b; font-size: 12px;">${side}<br>#${copyIndex}</p>`;
+                            text.style.textAlign = 'center';
+                            previewContent.appendChild(text);
+                        }
+                        
+                        copySlot.appendChild(previewContent);
+                        container.appendChild(copySlot);
+                    }
+                }
+            }
+            
+            function generateTestPDF() {
+                if (!frontImageData && !backImageData) {
+                    showStatus('Carregue pelo menos um documento', 'error');
+                    return;
+                }
+                
+                showStatus('Gerando PDF...', 'success');
+                
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: [PAGE_WIDTH, PAGE_HEIGHT]
+                    });
+                    
+                    const layout = calculateLayout();
+                    
+                    if (frontImageData) {
+                        addImagesToPDF(pdf, frontImageData, layout);
+                    }
+                    
+                    if (backImageData) {
+                        pdf.addPage();
+                        addImagesToPDF(pdf, backImageData, layout);
+                    }
+                    
+                    pdf.save(`printmaster-${layout.totalCopies}-copias.pdf`);
+                    showStatus('PDF gerado com sucesso!', 'success');
+                    
+                } catch (error) {
+                    console.error('Erro ao gerar PDF:', error);
+                    showStatus('Erro ao gerar PDF', 'error');
+                }
+            }
+            
+            function addImagesToPDF(pdf, imageData, layout) {
+                for (let row = 0; row < layout.verticalCopies; row++) {
+                    for (let col = 0; col < layout.horizontalCopies; col++) {
+                        let xPos, yPos;
+                        
+                        if (layout.autoCenter) {
+                            xPos = MARGIN + layout.extraMarginX + (col * (layout.docWidth + layout.horizontalSpacing));
+                            yPos = MARGIN + layout.extraMarginY + (row * (layout.docHeight + layout.verticalSpacing));
+                        } else {
+                            xPos = MARGIN + (col * (layout.docWidth + layout.horizontalSpacing));
+                            yPos = MARGIN + (row * (layout.docHeight + layout.verticalSpacing));
+                        }
+                        
+                        if (xPos + layout.docWidth <= PAGE_WIDTH - MARGIN && 
+                            yPos + layout.docHeight <= PAGE_HEIGHT - MARGIN) {
+                            
+                            pdf.addImage(
+                                imageData,
+                                'JPEG',
+                                xPos,
+                                yPos,
+                                layout.docWidth,
+                                layout.docHeight
+                            );
+                        }
+                    }
+                }
+            }
+            
+            function printDocument() {
+                generateTestPDF();
+            }
+            
+            function resetSystem() {
+                frontFileInput.value = '';
+                backFileInput.value = '';
+                frontFileName.textContent = 'Nenhum arquivo selecionado';
+                backFileName.textContent = 'Nenhum arquivo selecionado';
+                docWidthInput.value = '8';
+                docHeightInput.value = '10';
+                horizontalCopiesInput.value = '2';
+                verticalCopiesInput.value = '2';
+                horizontalSpacingInput.value = '5';
+                verticalSpacingInput.value = '5';
+                autoCenterToggle.checked = true;
+                frontImageData = null;
+                backImageData = null;
+                updatePreview();
+                showStatus('Sistema redefinido', 'success');
+            }
+            
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = 'status-message';
+                statusMessage.classList.add(`status-${type}`);
+                statusMessage.style.display = 'block';
+                
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 3000);
+            }
+            
+            // Inicializar
+            updatePreview();
+        });
+    </script>
+© 2025 Pibbaweb - Informática & Acessórios. Todos os direitos reservados.
+</body>
+</html>
